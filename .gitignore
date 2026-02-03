@@ -11,6 +11,7 @@ Tiff_files/
 # Ignorer les fichiers temporaires Python
 __pycache__/
 *.pyc
+.vscode
 
 # Ignorer les environnements virtuels (si tu en as un dans le dossier)
 venv/
