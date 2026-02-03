@@ -1,0 +1,17 @@
+# Ignorer les fichiers de données sources
+*.mat
+*.dcm
+*.ima
+*.nd2
+*.csv
+
+# Ignorer les dossiers de données 
+Tiff_files/
+
+# Ignorer les fichiers temporaires Python
+__pycache__/
+*.pyc
+
+# Ignorer les environnements virtuels (si tu en as un dans le dossier)
+venv/
+env/
