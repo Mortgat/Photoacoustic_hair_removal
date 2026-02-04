@@ -8,12 +8,12 @@ import scipy.io
 # ==========================================
 # Liste des fichiers DICOM (Cubes) à convertir
 fichiers_a_convertir = [
-    r"C:\Users\world\OneDrive\Documents\GitHub\Photoacoustic_hair_removal\Dicom docs\dicom\4261_20180326_112555703_Volume2.dcm",
-    r"C:\Users\world\OneDrive\Documents\GitHub\Photoacoustic_hair_removal\Dicom docs\dicom\3888_20180222_084017227_Volume2.dcm"
+    r"dicom_data/dicom/3888_20180222_084017227_Volume2.dcm",
+    r"dicom_data/dicom/4261_20180326_112555703_Volume2.dcm"
 ]
 
 # Dossier où on va poser les .mat propres
-dossier_sortie = r"C:\Users\world\OneDrive\Documents\GitHub\Photoacoustic_hair_removal\Dicom docs\dicom"
+dossier_sortie = r"dicom_data/dicom"
 
 def convertir_final(chemin_dicom):
     nom_fichier = os.path.basename(chemin_dicom)

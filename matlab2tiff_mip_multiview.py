@@ -8,10 +8,10 @@ import os
 # =================
 
 # Le fichier .mat source
-fichier_mat = r"Dicom docs\dicom\3851_PA797.mat"
+fichier_mat = r"dicom_data/dicom/3851_PA797.mat"
 
 # Le dossier où tu veux enregistrer les images 
-dossier_sortie = r"Tiff_files\Tiff_MIP"
+dossier_sortie = r"tiff_files/tiff_mip"
 
 # Les noms précis pour les 3 vues.
 # L'ordre correspond aux axes [0, 1, 2] de la matrice Numpy.

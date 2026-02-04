@@ -7,6 +7,8 @@
 
 # Ignorer les dossiers de données 
 Tiff_files/
+tiff_files/
+
 
 # Ignorer les fichiers temporaires Python
 __pycache__/

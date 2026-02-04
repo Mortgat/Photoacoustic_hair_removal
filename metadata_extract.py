@@ -6,10 +6,10 @@ import scipy.io
 # 1. LISTE DES FICHIERS À ANALYSER
 # ==========================================
 liste_fichiers = [
-    r"C:\Users\world\OneDrive\Documents\GitHub\Photoacoustic_hair_removal\Dicom docs\dicom\4261_20180326_112555703_Volume2.dcm",
-    r"C:\Users\world\OneDrive\Documents\GitHub\Photoacoustic_hair_removal\Dicom docs\dicom\3888_20180222_084017227_Volume2.dcm",
-    r"C:\Users\world\OneDrive\Documents\GitHub\Photoacoustic_hair_removal\Dicom docs\dicom\3851_PA797.mat",
-    r"C:\Users\world\OneDrive\Documents\GitHub\Photoacoustic_hair_removal\Dicom docs\dicom\3851_PA835.mat"
+    r"dicom_data/dicom/3851_PA797.mat",
+    r"dicom_data/dicom/3851_PA835.mat",
+    r"dicom_data/dicom/3888_20180222_084017227_Volume2.dcm",
+    r"dicom_data/dicom/4261_20180326_112555703_Volume2.dcm"
 ]
 
 def analyser_dicom_complet(chemin):
