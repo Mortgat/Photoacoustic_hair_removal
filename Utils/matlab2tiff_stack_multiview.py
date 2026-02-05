@@ -3,15 +3,13 @@ import tifffile
 import os
 import numpy as np
 import time
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ThreadPoolExecutor 
 
 # =================
 # 1. CONFIGURATION 
 # =================
 
-
 fichier_mat = "dicom_data/dicom/3851_PA797.mat"
-
 dossier_sortie_racine = "tiff_files/tiff_stacks"
 
 noms_views = [
@@ -19,10 +17,14 @@ noms_views = [
     "3851_PA797_Stack_View2",      # Axe 1
     "3851_PA797_Stack_View3"       # Axe 2 
 ]
+
+# Nombre optimal de threads logiques à utiliser (environ la moitié du nombre de cœurs logiques)
+max_workers = 24  # Tu peux ajuster ce nombre, mais 24 est un bon compromis pour ton matériel
+
 # =================
 
 def worker_save_slice(data, chemin):
-    """Fonction exécutée par les processus travailleurs."""
+    """Fonction exécutée par les threads pour sauvegarder les tranches."""
     try:
         tifffile.imwrite(chemin, data)
         return True
@@ -60,8 +62,8 @@ def extraire_stacks_opti():
         return
 
     # 2. Préparation et Exécution Parallèle
-    # Sur Linux, ProcessPoolExecutor est très rapide grâce au 'forking'
-    with ProcessPoolExecutor() as executor:
+    # Utilisation de ThreadPoolExecutor pour les E/S disques
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:  # Utilisation du nombre optimal de threads
         futures = []
         total_slices = 0
         
@@ -77,7 +79,7 @@ def extraire_stacks_opti():
             
             for i in range(nb_tranches):
                 # Extraction et copie
-                slice_data = np.take(volume, i, axis=axis).astype(np.uint16).copy()
+                slice_data = np.take(volume, i, axis=axis).astype(np.uint16)
                 
                 nom_fichier = f"slice_{i+1:04d}.tif"
                 chemin_final = os.path.join(chemin_dossier, nom_fichier)
@@ -87,7 +89,7 @@ def extraire_stacks_opti():
                 total_slices += 1
 
         print(f"\n🔥 Sauvegarde de {total_slices} fichiers en parallèle...")
-    
+
     end_time = time.time()
     duration = end_time - start_time
     print(f"\n🎉 Terminé en {duration:.2f} secondes !")
