@@ -7,7 +7,7 @@ from scipy.ndimage import median_filter
 # ==========================================
 # CONFIGURATION
 # ==========================================
-fichier_mat = r"dicom_data\dicom\4261_fromdcm.mat"
+fichier_mat = r"dicom_data/dicom/4261_fromdcm_denoised_doux.mat"
 
 # METADONNÉES
 RESOLUTION_Z_MM = 0.125

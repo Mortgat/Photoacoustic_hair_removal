@@ -6,7 +6,7 @@ import os
 # CONFIGURATION
 # ==========================================
 # Mets ici le fichier que tu veux corriger
-fichier_cible = r"dicom_data\dicom\3851_PA797.mat" 
+fichier_cible = r"dicom_data/dicom/4261_fromdcm.mat" 
 # ==========================================
 
 def trouver_variable_volume(mat_dict):

@@ -1,3 +1,4 @@
+# !!!WARNING!!! ONLY RUN IF YOU HAVE ENOUGH CORES!!!
 import scipy.io
 import tifffile
 import os
@@ -9,13 +10,13 @@ from concurrent.futures import ThreadPoolExecutor
 # 1. CONFIGURATION 
 # =================
 
-fichier_mat = "dicom_data/dicom/3851_PA797.mat"
+fichier_mat = "dicom_data/dicom/3888_fromdcm.mat"
 dossier_sortie_racine = "tiff_files/tiff_stacks"
 
 noms_views = [
-    "3851_PA797_Stack_View1",      # Axe 0
-    "3851_PA797_Stack_View2",      # Axe 1
-    "3851_PA797_Stack_View3"       # Axe 2 
+    "3888_fromdcm_Stack_View1",      # Axe 0
+    "3888_fromdcm_Stack_View2",      # Axe 1
+    "3888_fromdcm_Stack_View3"       # Axe 2 
 ]
 
 # Nombre optimal de threads logiques à utiliser (environ la moitié du nombre de cœurs logiques)

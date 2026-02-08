@@ -8,7 +8,7 @@ import os
 # =================
 
 # Le fichier .mat source
-fichier_mat = r"dicom_data/dicom/3851_PA797.mat"
+fichier_mat = r"dicom_data/dicom/4261_fromdcm.mat"
 
 # Le dossier où tu veux enregistrer les images 
 dossier_sortie = r"tiff_files/tiff_mip"
@@ -16,9 +16,9 @@ dossier_sortie = r"tiff_files/tiff_mip"
 # Les noms précis pour les 3 vues.
 # L'ordre correspond aux axes [0, 1, 2] de la matrice Numpy.
 noms_views = [
-    "3851_PA797_MIP_View1.tif",      # Projection Axe 0 
-    "3851_PA797_MIP_View2.tif",      # Projection Axe 1 
-    "3851_PA797_MIP_View3.tif"     # Projection Axe 2 
+    "4261_fromdcm_MIP_View1.tif",      # Projection Axe 0 
+    "4261_fromdcm_MIP_View2.tif",      # Projection Axe 1 
+    "4261_fromdcm_MIP_View3.tif"     # Projection Axe 2 
 ]
 
 # =================
