@@ -9,7 +9,7 @@ from tqdm import tqdm
 # CONFIGURATION
 # ==========================================
 # Fichier d'entrée (Ton volume original bruité)
-INPUT_FILE = r"dicom_data/dicom/4261_fromdcm.mat"
+INPUT_FILE = r"dicom_data/dicom/3888_fromdcm.mat"
 
 # Paramètres de Denoising "DOUX" (Validés pour préserver la peau)
 NUM_ITER = 40        # Assez pour nettoyer le bruit, pas assez pour effacer la peau

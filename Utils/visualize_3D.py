@@ -7,7 +7,7 @@ import os
 # ==========================================
 # CONFIGURATION
 # ==========================================
-fichier_mat = r"dicom_data/dicom/4261_fromdcm_denoised_doux.mat"
+fichier_mat = r"dicom_data/dicom/3888_fromdcm_denoised_doux.mat"
 
 # FACTEUR DE RÉDUCTION
 # On réduit la résolution avant de calculer la surface
@@ -88,7 +88,7 @@ def generate_surface_html():
         )
     )
 
-    output_file = "surface_skin_3d.html"
+    output_file = "3888_surface_skin_3d.html"
     print(f"💾 Sauvegarde dans {output_file}...")
     fig.write_html(output_file)
     print("✅ TERMINE ! Ouvre le fichier HTML.")
