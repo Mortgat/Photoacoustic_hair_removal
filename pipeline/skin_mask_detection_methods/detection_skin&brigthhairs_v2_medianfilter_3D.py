@@ -23,7 +23,7 @@ PERCENTILE_COUPURE_HAUTE = 93
 
 # TAILLE DU FILTRE 2D (Topographique)
 # Maintenant, 30 signifie vraiment un carré de 30x30 "pixels de peau" sur la surface !
-TAILLE_FILTRE_SURFACE = 50
+TAILLE_FILTRE_SURFACE = 30
 
 def trouver_variable_volume(mat_dict):
     for k, v in mat_dict.items():

@@ -25,7 +25,7 @@ fichier_mat = r"dicom_data/dicom/4261_fromdcm_denoised_doux.mat"
 
 # Paramètres ajustables
 MULTIPLICATEUR_SEUIL = 2  
-FORCE_LISSAGE_GAUSSIEN = 30  
+FORCE_LISSAGE_GAUSSIEN = 20
 
 # --- NOUVEAU PARAMÈTRE ---
 # Ex: 98.0 ignore les 2% des pixels les plus lumineux (poils denses/artéfacts)

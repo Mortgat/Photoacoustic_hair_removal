@@ -8,6 +8,8 @@
 # Ignorer les dossiers de données 
 Tiff_files/
 tiff_files/
+checkpoints/
+frames_sam2/
 
 
 # Ignorer les fichiers temporaires Python
@@ -18,3 +20,5 @@ __pycache__/
 # Ignorer les environnements virtuels (si tu en as un dans le dossier)
 venv/
 env/
+
+run_sam2.py

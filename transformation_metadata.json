@@ -1,0 +1,25 @@
+{
+    "shape_originale": [
+        2176,
+        1440,
+        256
+    ],
+    "angle_rotation_applique": -27.708578465916943,
+    "rognage_x": {
+        "min": 10,
+        "max": 2572
+    },
+    "format_sam2": {
+        "shape_rognee": {
+            "largeur_w": 2562,
+            "hauteur_h": 256
+        },
+        "padding": {
+            "top": 1153,
+            "bottom": 1153,
+            "left": 0,
+            "right": 0
+        },
+        "taille_finale": 1024
+    }
+}
