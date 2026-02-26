@@ -4,6 +4,8 @@
 *.ima
 *.nd2
 *.csv
+*.npz
+
 
 # Ignorer les dossiers de données 
 Tiff_files/
@@ -22,3 +24,4 @@ venv/
 env/
 
 run_sam2.py
+verif*
