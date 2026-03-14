@@ -76,15 +76,15 @@ def run_test():
     
     # SCÉNARIO 1 : "Doux" (Préserve les détails)
     # Kappa faible = on arrête de lisser dès qu'on touche un petit bord
-    res1 = anisotropic_diffusion_gpu(slice_destriped, n_iter=40, kappa=30, gamma=0.15)
+    res1 = anisotropic_diffusion_gpu(slice_destriped, n_iter=100, kappa=1, gamma=0.15)
     
     # SCÉNARIO 2 : "Équilibré" (Compromis)
     # Kappa moyen
-    res2 = anisotropic_diffusion_gpu(slice_destriped, n_iter=60, kappa=50, gamma=0.15)
+    res2 = anisotropic_diffusion_gpu(slice_destriped, n_iter=100, kappa=30, gamma=0.15)
     
     # SCÉNARIO 3 : "Fort" (Mais moins fou que le précédent)
     # Kappa un peu plus haut, mais iter raisonnable
-    res3 = anisotropic_diffusion_gpu(slice_destriped, n_iter=100, kappa=60, gamma=0.15)
+    res3 = anisotropic_diffusion_gpu(slice_destriped, n_iter=100, kappa=100, gamma=0.15)
 
     # Récupération CPU
     img_orig = slice_cpu.T
