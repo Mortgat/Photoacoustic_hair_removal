@@ -108,7 +108,7 @@ def generer_masques():
 
     # ---- Sorties
     chemin_peau = os.path.join(dossier_sortie, "surface_peau.npy")
-    chemin_poils = os.path.join(dossier_sortie, "masque_poils_surs.npy")
+    chemin_poils = os.path.join(dossier_sortie, "masque_poils_surs_v3.npy")
     chemin_vaisseaux = os.path.join(dossier_sortie, "masque_vaisseaux_potentiels.npy")
 
     os.makedirs(dossier_sortie, exist_ok=True)
