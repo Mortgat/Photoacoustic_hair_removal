@@ -14,7 +14,7 @@ DOSSIER_SORTIE = r"pipeline/2steps_pu_learning"
 
 DX_MM, DY_MM, DZ_MM = 0.125, 0.125, 0.125
 LONGUEUR_MIN_POIL_MM = 0.8  
-OFFSET_PEAU_MM = 0       
+OFFSET_PEAU_MM = 0.1       
 GAUSSIAN_SMOOTH_FRANGI = 0.7 
 
 Z_EXPANSION_MAX_VOXELS = 3    
@@ -29,7 +29,7 @@ SEUIL_FRANGI_HN_MAX = 0.05
 # Limites Spatiales
 HAUTEUR_AIR_MAX_MM = 5.0        # Plafond maximum pour un poil sûr ET pour les HN air
 MARGE_SECURITE_AIR_VOXELS = 3
-PROFONDEUR_SOUS_PEAU_HN_MM = 0 # Limite stricte sous la peau
+PROFONDEUR_SOUS_PEAU_HN_MM = 1.5 # Limite stricte sous la peau
 
 def calculer_peau_propre(nx, ny, nz):
     data = np.load(FICHIER_DENOISED)

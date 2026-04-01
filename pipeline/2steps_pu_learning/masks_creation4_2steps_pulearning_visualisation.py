@@ -3,9 +3,6 @@ import numpy as np
 import pyqtgraph as pg
 from qtpy import QtWidgets, QtCore
 
-def load_npz_array(npz_path, key="volume"):
-    return np.load(npz_path)[key]
-
 def normalize_to_uint8(img):
     lo, hi = np.percentile(img, 1), np.percentile(img, 99)
     if hi <= lo: hi = lo + 1e-6
@@ -13,7 +10,6 @@ def normalize_to_uint8(img):
     return (255 * out).astype(np.uint8)
 
 def rgba_overlay(mask_2d, color_rgb, alpha=100):
-    """Crée un calque RGBA aux dimensions exactes de PyQtGraph (row-major)"""
     h, w = mask_2d.shape
     rgba = np.zeros((h, w, 4), dtype=np.uint8)
     rgba[..., 0] = color_rgb[0]
@@ -22,27 +18,29 @@ def rgba_overlay(mask_2d, color_rgb, alpha=100):
     rgba[..., 3] = np.where(mask_2d, alpha, 0).astype(np.uint8)
     return rgba
 
-
 class VisualiseurPU(QtWidgets.QWidget):
-    def __init__(self, volume, surface_z, pos_mask, hn_mask, frangi_map, mip_2d):
+    def __init__(self, volume, surface_z, pos_mask, hn_mask, frangi_map, mip_2d, vaisseaux_mask):
         super().__init__()
-        self.setWindowTitle("Inspection Parfaite V2 : XZ par Y + MIP XY")
+        self.setWindowTitle("Inspection V2.9 : Poils vs Vaisseaux")
 
         self.volume = volume
         self.surface_z = surface_z.astype(np.float32)
         self.pos_mask = pos_mask
         self.hn_mask = hn_mask
         self.frangi_map = frangi_map
+        self.vaisseaux_mask = vaisseaux_mask
+
+        self.has_vaisseaux = np.any(self.vaisseaux_mask)
 
         self.nx, self.ny, self.nz = self.volume.shape
         self.current_y = self.ny // 2
 
         print("Préparation des projections 2D...")
-        # L'image XY s'affiche avec X horizontal et Y vertical. En row-major, shape = (ny, nx)
         self.mip_xy_u8 = normalize_to_uint8(mip_2d).T
         self.pos_xy = np.any(self.pos_mask, axis=2).T
         self.hn_xy = np.any(self.hn_mask, axis=2).T
         self.frangi_xy = np.any(self.frangi_map > 0.1, axis=2).T
+        self.vaisseaux_xy = np.any(self.vaisseaux_mask, axis=2).T
 
         self.init_ui()
         self.init_top_view()
@@ -88,16 +86,28 @@ class VisualiseurPU(QtWidgets.QWidget):
 
         self.cb_bg = QtWidgets.QCheckBox("Fond Volume")
         self.cb_bg.setChecked(True)
-        self.cb_pos = QtWidgets.QCheckBox("Poils Sûrs (Vert)")
+        self.cb_pos = QtWidgets.QCheckBox("Poils (Vert)")
         self.cb_pos.setChecked(True)
-        self.cb_hn = QtWidgets.QCheckBox("Hard Negatives (Rouge)")
+        self.cb_hn = QtWidgets.QCheckBox("HN Bruit (Rouge)")
         self.cb_hn.setChecked(True)
+        self.cb_vs = QtWidgets.QCheckBox("HN Vaisseaux (Magenta)")
+        self.cb_vs.setChecked(True)
         self.cb_fr = QtWidgets.QCheckBox("Frangi (Bleu)")
-        self.cb_fr.setChecked(True)
+        self.cb_fr.setChecked(False)
         
-        for cb in [self.cb_bg, self.cb_pos, self.cb_hn, self.cb_fr]:
-            controls.addWidget(cb)
+        controls.addWidget(self.cb_bg)
+        controls.addWidget(self.cb_pos)
+        controls.addWidget(self.cb_vs)
+        controls.addWidget(self.cb_hn)
+        controls.addWidget(self.cb_fr)
+
+        if not self.has_vaisseaux:
+            self.cb_vs.hide()
+            self.cb_vs.setChecked(False)
+            
+        for cb in [self.cb_bg, self.cb_pos, self.cb_hn, self.cb_vs, self.cb_fr]:
             cb.stateChanged.connect(self.update_all)
+            
         self.slider_y.valueChanged.connect(self.on_y_changed)
 
     def init_top_view(self):
@@ -108,9 +118,10 @@ class VisualiseurPU(QtWidgets.QWidget):
         self.xy_base = pg.ImageItem()
         self.xy_fr = pg.ImageItem()
         self.xy_hn = pg.ImageItem()
+        self.xy_vs = pg.ImageItem()
         self.xy_pos = pg.ImageItem()
         
-        for item in [self.xy_base, self.xy_fr, self.xy_hn, self.xy_pos]:
+        for item in [self.xy_base, self.xy_fr, self.xy_hn, self.xy_vs, self.xy_pos]:
             self.plot_xy.addItem(item)
 
         self.xy_y_line = pg.InfiniteLine(angle=0, movable=False, pen=pg.mkPen('y', width=2))
@@ -126,9 +137,10 @@ class VisualiseurPU(QtWidgets.QWidget):
         self.xz_base = pg.ImageItem()
         self.xz_fr = pg.ImageItem()
         self.xz_hn = pg.ImageItem()
+        self.xz_vs = pg.ImageItem()
         self.xz_pos = pg.ImageItem()
         
-        for item in [self.xz_base, self.xz_fr, self.xz_hn, self.xz_pos]:
+        for item in [self.xz_base, self.xz_fr, self.xz_hn, self.xz_vs, self.xz_pos]:
             self.plot_xz.addItem(item)
 
         self.skin_curve = pg.PlotCurveItem(pen=pg.mkPen('y', width=2))
@@ -145,40 +157,40 @@ class VisualiseurPU(QtWidgets.QWidget):
 
     def update_all(self):
         y = self.current_y
-        
-        # Dimensions row-major pour des images vides parfaites
         empty_xy_rgba = np.zeros((self.ny, self.nx, 4), dtype=np.uint8)
         empty_xz_rgba = np.zeros((self.nz, self.nx, 4), dtype=np.uint8)
         empty_xy_base = np.zeros((self.ny, self.nx), dtype=np.uint8)
         empty_xz_base = np.zeros((self.nz, self.nx), dtype=np.uint8)
 
-        # MAJ VUE XY (Dessus)
+        # MAJ VUE XY
         self.xy_base.setImage(self.mip_xy_u8 if self.cb_bg.isChecked() else empty_xy_base, autoLevels=False)
         self.xy_pos.setImage(rgba_overlay(self.pos_xy, (0, 255, 0), 120) if self.cb_pos.isChecked() else empty_xy_rgba, autoLevels=False)
         self.xy_hn.setImage(rgba_overlay(self.hn_xy, (255, 0, 0), 80) if self.cb_hn.isChecked() else empty_xy_rgba, autoLevels=False)
+        self.xy_vs.setImage(rgba_overlay(self.vaisseaux_xy, (255, 0, 255), 180) if self.cb_vs.isChecked() else empty_xy_rgba, autoLevels=False)
         self.xy_fr.setImage(rgba_overlay(self.frangi_xy, (0, 100, 255), 60) if self.cb_fr.isChecked() else empty_xy_rgba, autoLevels=False)
         self.xy_y_line.setPos(y)
 
-        # MAJ VUE XZ (Coupe)
-        slice_xz = self.volume[:, y, :].T  # Shape (nz, nx)
+        # MAJ VUE XZ
+        slice_xz = self.volume[:, y, :].T 
         self.xz_base.setImage(normalize_to_uint8(slice_xz) if self.cb_bg.isChecked() else empty_xz_base, autoLevels=False)
         
         pos_mask = self.pos_mask[:, y, :].T
         hn_mask = self.hn_mask[:, y, :].T
+        vs_mask = self.vaisseaux_mask[:, y, :].T
         fr_mask = self.frangi_map[:, y, :].T > 0.1
         
         self.xz_pos.setImage(rgba_overlay(pos_mask, (0, 255, 0), 150) if self.cb_pos.isChecked() else empty_xz_rgba, autoLevels=False)
         self.xz_hn.setImage(rgba_overlay(hn_mask, (255, 0, 0), 80) if self.cb_hn.isChecked() else empty_xz_rgba, autoLevels=False)
+        self.xz_vs.setImage(rgba_overlay(vs_mask, (255, 0, 255), 180) if self.cb_vs.isChecked() else empty_xz_rgba, autoLevels=False)
         self.xz_fr.setImage(rgba_overlay(fr_mask, (0, 100, 255), 60) if self.cb_fr.isChecked() else empty_xz_rgba, autoLevels=False)
 
-        # MAJ Lignes Z-Gating
         x_vals = np.arange(self.nx)
         z_skin = self.surface_z[:, y]
         valid = ~np.isnan(z_skin)
         
         if np.any(valid):
             self.skin_curve.setData(x_vals[valid], z_skin[valid])
-            self.limit_curve.setData(x_vals[valid], z_skin[valid] - 40) # 40 voxels = 5.0 mm
+            self.limit_curve.setData(x_vals[valid], z_skin[valid] - 40)
         else:
             self.skin_curve.clear()
             self.limit_curve.clear()
@@ -202,10 +214,16 @@ def main():
     frangi = np.load(os.path.join(dossier, "carte_frangi.npy"))
     mip_2d = np.max(vol, axis=2)
 
+    f_vs = os.path.join(dossier, "masque_vaisseaux_surs.npy")
+    if os.path.exists(f_vs):
+        vs_mask = np.load(f_vs)
+    else:
+        vs_mask = np.zeros_like(pos)
+
     app = QtWidgets.QApplication(sys.argv)
     pg.setConfigOptions(imageAxisOrder='row-major')
     
-    win = VisualiseurPU(vol, surf, pos, hn, frangi, mip_2d)
+    win = VisualiseurPU(vol, surf, pos, hn, frangi, mip_2d, vs_mask)
     win.resize(1600, 900)
     win.show()
     sys.exit(app.exec_())

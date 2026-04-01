@@ -16,7 +16,7 @@ DOSSIER_MASQUES = r"pipeline/2steps_pu_learning"
 DOSSIER_MODELE = r"pipeline/modele_pu"
 DZ_MM = 0.125
 ZONE_CONFLIT_MAX_MM = 5.0
-PROFONDEUR_EASY_NEG_MM = 0 # Limite stricte ajustée à 1.5 mm
+PROFONDEUR_EASY_NEG_MM = 1.5 # Limite stricte ajustée à 1.5 mm
 
 EPOCHS = 15 # Augmentation pour convergence du réseau plus large
 LR = 1e-4

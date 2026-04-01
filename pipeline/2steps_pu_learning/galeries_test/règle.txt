@@ -1,0 +1,24 @@
+# --- RÈGLES DES POILS (Graines) ---
+PERCENTILE_POILS_INT = 95.0
+PERCENTILE_FRANGI = 75.0
+
+# AXIOME 1 (Poils Standards) : Si la cible est au-dessus ou pile sur la ligne de peau estimée, 
+# la peau est bien modélisée. On valide directement.
+OFFSET_PEAU_STANDARD_VOXELS = 0
+
+# AXIOME 2 (Poils Profonds / Forêt) : Si un groupe dense de poils pousse verticalement, il agit comme 
+# une canopée et trompe l'algorithme qui trace la peau au-dessus d'eux (la peau est donc mal modélisée).
+# Conséquence : On autorise la recherche sous la fausse peau, UNIQUEMENT si la structure est très verticale.
+PROFONDEUR_FORET_MAX_MM = 1.5
+RATIO_VERTICALITE_MIN = 1.0 # 45 degrés min : dz / max(dx, dy) >= 1.0
+
+# --- RÈGLES DES VAISSEAUX SANGUINS (Hard Negatives) ---
+PERCENTILE_VAISSEAUX_INT = 85.0 # Abaissé à 85% pour garantir la capture face aux poils ultra-lumineux
+
+# AXIOME 3 (Vaisseaux Sûrs) : Si une structure est couchée (plate), elle n'a physiquement pas pu 
+# rehausser artificiellement la ligne de peau. La peau est donc exacte. On peut valider un vaisseau 
+# peu importe sa profondeur, s'il est plat et continu.
+MAX_Z_JUMP_VOXELS = 2.0 # Tolérance de saut MIP 2D pour continuité du tube Frangi
+RATIO_PLATITUDE_MAX = 0.3 # Structure très plate : dz / max(dx, dy) < 0.3
+
+4ième axome, dans un même zone, les poils sont dressés dans le mêmen sens, donc on ne peut pas avoir un poil couché et un aure levé.

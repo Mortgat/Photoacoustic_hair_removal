@@ -3,9 +3,6 @@ import numpy as np
 import pyqtgraph as pg
 from qtpy import QtWidgets, QtCore
 
-def load_npz_array(npz_path, key="volume"):
-    return np.load(npz_path)[key]
-
 def normalize_to_uint8_slice(img):
     lo, hi = np.percentile(img, 1), np.percentile(img, 99)
     if hi <= lo: hi = lo + 1e-6
@@ -27,17 +24,15 @@ def rgba_overlay_prob(pred_2d, color_rgb, prob_mode):
     rgba[..., 0] = color_rgb[0]
     rgba[..., 1] = color_rgb[1]
     rgba[..., 2] = color_rgb[2]
-    
     if prob_mode:
         alpha = (pred_2d * 200).astype(np.uint8)
         rgba[..., 3] = np.where(pred_2d > 0.05, alpha, 0)
     else:
         rgba[..., 3] = np.where(pred_2d > 0.5, 150, 0).astype(np.uint8)
-        
     return rgba
 
 class VisualiseurPUPrediction(QtWidgets.QWidget):
-    def __init__(self, volume, surface_z, pos_mask, pred_map, mip_norm):
+    def __init__(self, volume, surface_z, pos_mask, pred_map, mip_norm, vaisseaux_mask):
         super().__init__()
         self.setWindowTitle("Inspection des Prédictions : PU Learning")
 
@@ -45,6 +40,8 @@ class VisualiseurPUPrediction(QtWidgets.QWidget):
         self.surface_z = surface_z.astype(np.float32)
         self.pos_mask = pos_mask
         self.pred_map = pred_map
+        self.vaisseaux_mask = vaisseaux_mask
+        self.has_vaisseaux = np.any(self.vaisseaux_mask)
 
         self.nx, self.ny, self.nz = self.volume.shape
         self.current_y = self.ny // 2
@@ -53,6 +50,7 @@ class VisualiseurPUPrediction(QtWidgets.QWidget):
         self.mip_xy_u8 = (mip_norm * 255).astype(np.uint8).T
         self.pos_xy = np.any(self.pos_mask, axis=2).T
         self.pred_xy = np.max(self.pred_map, axis=2).T
+        self.vs_xy = np.any(self.vaisseaux_mask, axis=2).T
 
         self.init_ui()
         self.init_top_view()
@@ -96,27 +94,31 @@ class VisualiseurPUPrediction(QtWidgets.QWidget):
         self.label_y_value = QtWidgets.QLabel(str(self.current_y))
         controls.addWidget(self.label_y_value)
 
-        # Séparateur visuel
         line = QtWidgets.QFrame()
         line.setFrameShape(QtWidgets.QFrame.VLine)
         controls.addWidget(line)
 
-        # Contrôles de base
         self.cb_bg = QtWidgets.QCheckBox("Fond Volume")
         self.cb_bg.setChecked(True)
         self.cb_pos = QtWidgets.QCheckBox("Poils GT (Vert)")
         self.cb_pos.setChecked(True)
+        self.cb_vs = QtWidgets.QCheckBox("Vaisseaux (Magenta)")
+        self.cb_vs.setChecked(True)
+        
         controls.addWidget(self.cb_bg)
         controls.addWidget(self.cb_pos)
+        controls.addWidget(self.cb_vs)
 
-        # Séparateur visuel
+        if not self.has_vaisseaux:
+            self.cb_vs.hide()
+            self.cb_vs.setChecked(False)
+
         line2 = QtWidgets.QFrame()
         line2.setFrameShape(QtWidgets.QFrame.VLine)
         controls.addWidget(line2)
 
-        # Boutons Radio exclusifs pour la prédiction
-        self.radio_prob = QtWidgets.QRadioButton("Pred: Probabilités")
-        self.radio_bin = QtWidgets.QRadioButton("Pred: Binaire (>0.5)")
+        self.radio_prob = QtWidgets.QRadioButton("Pred: Probas")
+        self.radio_bin = QtWidgets.QRadioButton("Pred: Binaire")
         self.radio_off = QtWidgets.QRadioButton("Pred: Masquées")
         self.radio_prob.setChecked(True)
 
@@ -124,9 +126,9 @@ class VisualiseurPUPrediction(QtWidgets.QWidget):
         controls.addWidget(self.radio_bin)
         controls.addWidget(self.radio_off)
 
-        # Connexions
         self.cb_bg.stateChanged.connect(self.update_all)
         self.cb_pos.stateChanged.connect(self.update_all)
+        self.cb_vs.stateChanged.connect(self.update_all)
         self.radio_prob.toggled.connect(self.update_all)
         self.radio_bin.toggled.connect(self.update_all)
         self.radio_off.toggled.connect(self.update_all)
@@ -138,18 +140,17 @@ class VisualiseurPUPrediction(QtWidgets.QWidget):
         self.plot_xy.invertY(True)
         
         self.xy_base = pg.ImageItem()
+        self.xy_vs = pg.ImageItem()
         self.xy_pos = pg.ImageItem()
         self.xy_pred = pg.ImageItem()
         
-        for item in [self.xy_base, self.xy_pos, self.xy_pred]:
+        for item in [self.xy_base, self.xy_vs, self.xy_pos, self.xy_pred]:
             self.plot_xy.addItem(item)
 
         self.xy_y_line = pg.InfiniteLine(angle=0, movable=False, pen=pg.mkPen('y', width=2))
         self.plot_xy.addItem(self.xy_y_line)
         self.plot_xy.scene().sigMouseClicked.connect(self.on_xy_mouse_clicked)
-        
-        vb = self.plot_xy.getViewBox()
-        vb.setLimits(xMin=0, xMax=self.nx, yMin=0, yMax=self.ny, maxXRange=self.nx, maxYRange=self.ny)
+        self.plot_xy.getViewBox().setLimits(xMin=0, xMax=self.nx, yMin=0, yMax=self.ny, maxXRange=self.nx, maxYRange=self.ny)
 
     def init_xz_view(self):
         self.plot_xz.setLabel('bottom', 'X')
@@ -157,10 +158,11 @@ class VisualiseurPUPrediction(QtWidgets.QWidget):
         self.plot_xz.invertY(True)
         
         self.xz_base = pg.ImageItem()
+        self.xz_vs = pg.ImageItem()
         self.xz_pos = pg.ImageItem()
         self.xz_pred = pg.ImageItem()
         
-        for item in [self.xz_base, self.xz_pos, self.xz_pred]:
+        for item in [self.xz_base, self.xz_vs, self.xz_pos, self.xz_pred]:
             self.plot_xz.addItem(item)
 
         self.skin_curve = pg.PlotCurveItem(pen=pg.mkPen('y', width=2))
@@ -168,8 +170,7 @@ class VisualiseurPUPrediction(QtWidgets.QWidget):
         self.plot_xz.addItem(self.skin_curve)
         self.plot_xz.addItem(self.limit_curve)
         
-        vb = self.plot_xz.getViewBox()
-        vb.setLimits(xMin=0, xMax=self.nx, yMin=0, yMax=self.nz, maxXRange=self.nx, maxYRange=self.nz)
+        self.plot_xz.getViewBox().setLimits(xMin=0, xMax=self.nx, yMin=0, yMax=self.nz, maxXRange=self.nx, maxYRange=self.nz)
 
     def on_y_changed(self, value):
         self.current_y = int(value)
@@ -178,7 +179,6 @@ class VisualiseurPUPrediction(QtWidgets.QWidget):
 
     def update_all(self):
         y = self.current_y
-        
         show_pred = not self.radio_off.isChecked()
         prob_mode = self.radio_prob.isChecked()
         
@@ -187,16 +187,16 @@ class VisualiseurPUPrediction(QtWidgets.QWidget):
         empty_xy_base = np.zeros((self.ny, self.nx), dtype=np.uint8)
         empty_xz_base = np.zeros((self.nz, self.nx), dtype=np.uint8)
 
-        # MAJ VUE XY
         self.xy_base.setImage(self.mip_xy_u8 if self.cb_bg.isChecked() else empty_xy_base, autoLevels=False)
+        self.xy_vs.setImage(rgba_overlay(self.vs_xy, (255, 0, 255), 150) if self.cb_vs.isChecked() else empty_xy_rgba, autoLevels=False)
         self.xy_pos.setImage(rgba_overlay(self.pos_xy, (0, 255, 0), 120) if self.cb_pos.isChecked() else empty_xy_rgba, autoLevels=False)
         self.xy_pred.setImage(rgba_overlay_prob(self.pred_xy, (255, 0, 0), prob_mode) if show_pred else empty_xy_rgba, autoLevels=False)
         self.xy_y_line.setPos(y)
 
-        # MAJ VUE XZ
         slice_xz = self.volume[:, y, :].T
         self.xz_base.setImage(normalize_to_uint8_slice(slice_xz) if self.cb_bg.isChecked() else empty_xz_base, autoLevels=False)
         
+        self.xz_vs.setImage(rgba_overlay(self.vaisseaux_mask[:, y, :].T, (255, 0, 255), 180) if self.cb_vs.isChecked() else empty_xz_rgba, autoLevels=False)
         self.xz_pos.setImage(rgba_overlay(self.pos_mask[:, y, :].T, (0, 255, 0), 150) if self.cb_pos.isChecked() else empty_xz_rgba, autoLevels=False)
         
         pred_slice = self.pred_map[:, y, :].T
@@ -224,22 +224,24 @@ def main():
     dossier = r"pipeline/2steps_pu_learning"
     f_vol = r"dicom_data/dicom/4261_fromdcm.npz"
     
-    print("Chargement des données...")
     vol = np.load(f_vol)["volume"]
     surf = np.load(os.path.join(dossier, "surface_peau.npy"))
     pos = np.load(os.path.join(dossier, "masque_poils_surs.npy"))
     mip_norm = np.load(os.path.join(dossier, "mip_2d.npy"))
     
+    f_vs = os.path.join(dossier, "masque_vaisseaux_surs.npy")
+    vaisseaux = np.load(f_vs) if os.path.exists(f_vs) else np.zeros_like(pos)
+
     f_pred = os.path.join(dossier, "prediction_pu.npy")
     if not os.path.exists(f_pred):
-        print(f"Erreur : Le fichier de prédiction {f_pred} est introuvable.")
+        print(f"Erreur : {f_pred} introuvable.")
         return
     pred_map = np.load(f_pred)
 
     app = QtWidgets.QApplication(sys.argv)
     pg.setConfigOptions(imageAxisOrder='row-major')
     
-    win = VisualiseurPUPrediction(vol, surf, pos, pred_map, mip_norm)
+    win = VisualiseurPUPrediction(vol, surf, pos, pred_map, mip_norm, vaisseaux)
     win.resize(1600, 900)
     win.show()
     sys.exit(app.exec_())
